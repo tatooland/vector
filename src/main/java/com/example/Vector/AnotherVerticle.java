@@ -149,7 +149,7 @@ public class AnotherVerticle extends AbstractVerticle {
       .setHost("127.0.0.1")
       .setDatabase("zoo")
       .setUser("root")
-      .setPassword("()<>JK2019T^^km");
+      .setPassword("");
 
     PoolOptions poolOptions = new PoolOptions()
       .setMaxSize(5);
