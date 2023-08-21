@@ -1,5 +1,6 @@
 package com.to.core.base;
 
+import com.example.config.RedisConfig;
 import com.to.core.ann.Get;
 import com.to.core.ann.Post;
 import com.to.core.ann.VectorConfig;
@@ -10,6 +11,10 @@ import io.vertx.ext.web.Router;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.MySQLConnection;
 import io.vertx.mysqlclient.MySQLPool;
+import io.vertx.redis.client.Redis;
+import io.vertx.redis.client.RedisConnection;
+import io.vertx.redis.client.RedisOptions;
+import io.vertx.redis.client.impl.RedisClient;
 import io.vertx.sqlclient.PoolOptions;
 import io.vertx.sqlclient.SqlConnection;
 
@@ -25,7 +30,9 @@ public class Vector extends AbstractVerticle {
   private boolean useLocalRedisConnection = false;
 
   protected MySQLPool mysqlLocalPool = null;
-  protected MySQLPool mysqlGlobalPool = null;
+
+
+  protected Redis redisLocalPool = null;
 
   public Vector(){
     //
@@ -101,18 +108,18 @@ public class Vector extends AbstractVerticle {
   @Override
   public void stop() {
     if(this.useLocalMySQLConnection){
-
+      releaseLocalMySQLPool();
     }
 
     if(this.useLocalRedisConnection){
-
+      releaseLocalRedisPool();
     }
   }
 
 //部署共享mysql连接池
   protected void deployGlobalMySQLPool() {
     if(vertx.sharedData().getLocalMap("vector-pool").get("vector-mysql-pool")==null){//判断共享连接池是否存在,不存在则创建
-      System.out.println("global mysql pool not set");
+      System.out.println("global mysql pool not ready");
       MySQLConnectOptions connectOptions = new MySQLConnectOptions()
         .setHost("localhost")
         .setPort(3306)
@@ -125,7 +132,12 @@ public class Vector extends AbstractVerticle {
   }
 //部署共享redis连接池
   protected void deployGlobalRedisPool() {
-
+    if(vertx.sharedData().getLocalMap("vector-pool").get("vector-redis-pool")==null){
+      System.out.println("global redis pool not ready");
+      RedisOptions options = new RedisOptions().setConnectionString("redis://localhost:6379");
+      Redis pool = Redis.createClient(vertx, options);
+      vertx.sharedData().getLocalMap("vector-pool").put("vector-redis-pool", pool);
+    }
   }
 //创建本地mysql连接池
   protected void createLocalMySQLPool() {//创建依附于当前vector的mysql连接池，当vector释放后连接池被释放
@@ -138,27 +150,50 @@ public class Vector extends AbstractVerticle {
     this.mysqlLocalPool = MySQLPool.pool(vertx, connectOptions, poolOptions);
   }
 //获取本地mysql连接池连接
-  private MySQLConnection getConn(){
+  public MySQLPool getMySQL(){
     if(this.mysqlLocalPool != null){
-        return (MySQLConnection) this.mysqlLocalPool.getConnection();
+        return  this.mysqlLocalPool;
     }else{
       throw new NullPointerException("mysql pool cannot be null");
     }
   }
 //获取共享mysql连接池连接
-  private MySQLConnection getGlobalConn() {
+  public MySQLPool getSharedMySQL() {
     //获取共享mysql链接池
     if(vertx.sharedData().getLocalMap("vector-pool").get("vector-mysql-pool") != null){
       MySQLPool pool = (MySQLPool) vertx.sharedData().getLocalMap("vector-pool").get("vector-mysql-pool");
-      return (MySQLConnection) pool.getConnection();
+      return pool;
     }else{
       throw new NullPointerException();
     }
   }
 //创建本地redis连接池
   protected void createLocalRedisPool() {
-
+    RedisOptions options = new RedisOptions().setConnectionString("redis://localhost:6379");
+     redisLocalPool = Redis.createClient(vertx, options);
   }
-
-
+//获取本地redis对象
+  public Redis getRedis(){
+    return this.redisLocalPool;
+  }
+//获取共享redis对象
+  public Redis getSharedRedis(){
+    if(vertx.sharedData().getLocalMap("vector-pool").get("vector-redis-pool") != null){
+      return (Redis) vertx.sharedData().getLocalMap("vector-pool").get("vector-redis-pool");
+    }else{
+      throw new NullPointerException();
+    }
+  }
+  //释放本地mysql连接池
+  public void releaseLocalMySQLPool() {
+    if(this.mysqlLocalPool != null){
+      this.mysqlLocalPool.close();
+    }
+  }
+  //释放本地redis对象
+  public void releaseLocalRedisPool() {
+    if(this.redisLocalPool != null){
+      this.redisLocalPool.close();
+    }
+  }
 }
