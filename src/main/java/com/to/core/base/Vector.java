@@ -1,26 +1,20 @@
 package com.to.core.base;
 
 import com.example.config.RedisConfig;
-import com.to.core.ann.Get;
-import com.to.core.ann.Post;
-import com.to.core.ann.VectorConfig;
+import com.to.core.ann.*;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.Route;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.mysqlclient.MySQLConnectOptions;
-import io.vertx.mysqlclient.MySQLConnection;
 import io.vertx.mysqlclient.MySQLPool;
 import io.vertx.redis.client.Redis;
-import io.vertx.redis.client.RedisConnection;
 import io.vertx.redis.client.RedisOptions;
-import io.vertx.redis.client.impl.RedisClient;
 import io.vertx.sqlclient.PoolOptions;
-import io.vertx.sqlclient.SqlConnection;
-
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+
 
 public class Vector extends AbstractVerticle {
   private int port = 0;
@@ -56,15 +50,61 @@ public class Vector extends AbstractVerticle {
           }
         });
       }else if(method.isAnnotationPresent(Post.class)){//获取进行了http  Post请求声明的子类成员方法
+        //遍历方法的入参列表
         Post methodAnn = method.getAnnotation(Post.class);
         String path = methodAnn.path();
         router.post(path).handler(ctx->{
-          try {
-            method.invoke(this,ctx);
-          } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-          } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+          if(ctx.request().getHeader("Content-Type").equals("application/json")) {
+            ctx.request().bodyHandler(bodyHandler-> {
+              ArrayList<Object> argList = new ArrayList<>();
+              argList.add(ctx);
+              JsonObject jsObj = bodyHandler.toJsonObject();
+              for (Parameter parameter : method.getParameters()) {
+                if (parameter.isAnnotationPresent(FromJsonParams.class)) {
+                  String key = parameter.getName();
+                  switch (parameter.getType().getName()) {
+                    case "int": {
+                      argList.add(jsObj.getInteger(key));
+                    }
+                    break;
+                    case "String": {
+                      argList.add(jsObj.getString(key));
+                    }
+                    break;
+                    case "long": {
+                      argList.add(jsObj.getLong(key));
+                    }
+                    break;
+                    case "boolean": {
+                      argList.add(jsObj.getBoolean(key));
+                    }
+                    break;
+                    case "JsonObject": {
+                      argList.add(jsObj.getJsonObject(key));
+                    }
+                    break;
+                    case "JsonArray":{
+                      argList.add(jsObj.getJsonArray(key));
+                    }break;
+                    default:
+                      argList.add(jsObj.getString(key));
+                  }
+                }else if(parameter.isAnnotationPresent(JsonParam.class)){
+                  argList.add(jsObj);
+                }
+              }
+
+              int argLength = argList.size();
+              try {
+                method.invoke(this, (Object[])argList.toArray(new Object[argLength]));
+              } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+              } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+              }
+            });
+          }else{
+            throw new IllegalArgumentException("capture params in json request must be json format");
           }
         });
       }else if(method.isAnnotationPresent(VectorConfig.class)){//http服务器及组件配置参数获取
@@ -145,7 +185,7 @@ public class Vector extends AbstractVerticle {
       .setHost("localhost")
       .setPort(3306)
       .setDatabase("zoo")
-      .setPassword("");
+      .setPassword("()<>JK2019T^^km");
     PoolOptions poolOptions = new PoolOptions().setMaxSize(2);
     this.mysqlLocalPool = MySQLPool.pool(vertx, connectOptions, poolOptions);
   }
