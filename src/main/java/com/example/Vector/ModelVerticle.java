@@ -1,5 +1,6 @@
 package com.example.Vector;
 import com.to.core.ann.*;
+import com.to.core.base.DataAdapterEncoder;
 import com.to.core.base.Vector;
 import com.to.core.utils.MySQLHelper;
 import io.vertx.core.Future;
@@ -10,6 +11,8 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 
@@ -109,5 +112,48 @@ public class ModelVerticle extends Vector {
         ctx.json(new JsonObject().put("result", "falt"));
       }
     });
+  }
+  @Post(path="/rds")
+  public void rdsTest(RoutingContext ctx,@FromJsonParams String key, @FromJsonParams String value){
+    this.getRedis().connect().onSuccess(conn->{
+      RedisAPI.api(conn).set(Arrays.asList(key, value)).onSuccess(result->{
+        conn.close();
+        ctx.json(new JsonObject().put("result", result.toString()));
+      }).onFailure(err->{
+        conn.close();
+        ctx.json(new JsonObject().put("result", err.getMessage()));
+      });
+    });
+  }
+
+  @Post(path="/rds/get")
+  public void rdsGet(RoutingContext ctx, @FromJsonParams String key){
+    this.getRedis().connect().onSuccess(conn->{
+      RedisAPI.api(conn).get(key).onSuccess(result->{
+        conn.close();
+        ctx.json(new JsonObject().put("result", result.toString()));
+      }).onFailure(err ->{
+        ctx.json(new JsonObject().put("result", err.getMessage()));
+      });
+    });
+  }
+
+  @Post(path="/json/map")
+  public void jsonMapTest(RoutingContext ctx, @JsonParam JsonObject jsonObj){
+    MySQLHelper mySQLHelper = new MySQLHelper();
+    ctx.json(new JsonObject().put("result", "ok"));
+    mySQLHelper.Map(jsonObj);
+  }
+
+  /*数据协议到映射模板测试-多例*/
+  @Post(path="/dataAdapter/multiple")
+  public void multipleData(RoutingContext ctx, @JsonParam JsonObject jsonObject){
+    DataAdapterEncoder encoder = new DataAdapterEncoder();
+    Map<String, String> mapping = encoder.encode(jsonObject.toString());
+    JsonObject ret = new JsonObject();
+    mapping.forEach((key, value) -> {
+      ret.put(key, value);
+    }) ;
+    ctx.json(ret);
   }
 }
