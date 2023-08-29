@@ -156,4 +156,14 @@ public class ModelVerticle extends Vector {
     }) ;
     ctx.json(ret);
   }
+  @Post(path="/dataAdapter/single")
+  public void singleData(RoutingContext ctx, @JsonParam JsonObject jsonObject){
+    DataAdapterEncoder encoder = new DataAdapterEncoder();
+    Map<String, String> mapping = encoder.encode(jsonObject.toString());
+    JsonObject ret = new JsonObject();
+    mapping.forEach((key, value)->{
+      ret.put(key, value);
+    });
+    ctx.json(ret);
+  }
 }
