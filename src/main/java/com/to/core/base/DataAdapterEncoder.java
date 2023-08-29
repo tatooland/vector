@@ -1,5 +1,6 @@
 package com.to.core.base;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class DataAdapterEncoder {
@@ -7,7 +8,7 @@ public class DataAdapterEncoder {
 
   //将协议配置转换为映射模板
   public Map<String, String> encode(String protocolStr){
-    Map<String, String> tplMapEntry = new HashMap<>();
+    Map<String, String> tplMapEntry = new LinkedHashMap<>();
     //协议分析
     this.analysis(protocolStr, tplMapEntry);
     return tplMapEntry;
@@ -27,7 +28,7 @@ public class DataAdapterEncoder {
       //多例模式下需要报错起始修饰串和终止修饰串
       int beginIndex = protocolStr.indexOf("[{");
       int endIndex = protocolStr.indexOf("}]");
-      tplMapEntry.put("vector_framework_multiple_start", protocolStr.substring(0,beginIndex+2));
+      tplMapEntry.put("vector_framework_multiple_start", protocolStr.substring(0,beginIndex+1));
       tplMapEntry.put("vector_framework_multiple_end", protocolStr.substring(endIndex, protocolStr.length()));
       //将起始修饰串和终止修饰串从协议模板中剔除
       protocolStr = protocolStr.substring(beginIndex+1, endIndex);
@@ -48,7 +49,7 @@ public class DataAdapterEncoder {
       this.analysisProtocol(jsonStr, tplMapEntry, end+2);
     }else{
       if(tplMapEntry.get("vector_framework_data_type").equals("single")) {
-        tplMapEntry.put("vector_framework_single_end", jsonStr.substring(jsonStr.indexOf(start)));
+        tplMapEntry.put("vector_framework_single_end", jsonStr.substring(start));
       }
     }
   }
