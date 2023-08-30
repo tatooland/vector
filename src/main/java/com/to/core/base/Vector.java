@@ -85,7 +85,6 @@ public class Vector extends AbstractVerticle {
                     }
                     break;
                     case "io.vertx.core.json.JsonObject": {
-                      System.out.println(jsObj.getJsonObject(key).toString());
                       argList.add(jsObj.getJsonObject(key));
                     }
                     break;
