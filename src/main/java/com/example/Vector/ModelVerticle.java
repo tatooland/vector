@@ -2,7 +2,8 @@ package com.example.Vector;
 import com.to.core.ann.*;
 import com.to.core.base.DataAdapterEncoder;
 import com.to.core.base.Vector;
-import com.to.core.utils.MySQLHelper;
+import com.to.core.utils.DataAdapter;
+import com.to.core.lib.MySQLHelper;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -165,5 +166,12 @@ public class ModelVerticle extends Vector {
       ret.put(key, value);
     });
     ctx.json(ret);
+  }
+
+  @Post(path="/dataAdapter/MapTask")
+  public void genMap(RoutingContext ctx, @FromJsonParams String protocolName, @FromJsonParams JsonObject protocol){
+    DataAdapter adapter = new DataAdapter(this);
+    String result = adapter.genMapping(protocolName, protocol);
+    ctx.json(new JsonObject().put("result", result));
   }
 }

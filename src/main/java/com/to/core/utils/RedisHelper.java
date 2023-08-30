@@ -1,6 +1,5 @@
-package com.example.lib;
+package com.to.core.utils;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -14,7 +13,7 @@ public class RedisHelper {
   private RedisAPI redis = null;
   public RedisHelper(Vertx vertx){
     Promise<RedisConnection> rc = Promise.promise();
-     Redis.createClient(vertx, redisUrl)
+    Redis.createClient(vertx, redisUrl)
       .connect()
       .onSuccess(conn -> {
         rc.complete();

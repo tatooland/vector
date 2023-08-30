@@ -1,6 +1,5 @@
-package com.to.core.utils;
+package com.to.core.lib;
 
-import com.example.lib.MysqlHelper;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -10,6 +9,9 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MySQLHelper {
   private MySQLPool pool;
   public MySQLHelper(MySQLPool pool){
@@ -18,6 +20,9 @@ public class MySQLHelper {
     }else{
       throw new NullPointerException();
     }
+  }
+  public MySQLHelper() {
+
   }
   public void execute(String sql, Tuple tuple, Handler<RowSet<Row>> handler){
     if(tuple != null) {
@@ -58,7 +63,27 @@ public class MySQLHelper {
   }
 
   public MySQLHelper Map(JsonObject rsObj){
+    System.out.println(rsObj.toString());
+    //取出 模板参数（以${}$进行声明的)
+    Map<String, String> tplMapEntry = new HashMap<>();
+    this.parseJson(rsObj.toString(), tplMapEntry, 0);
+//    for (Map.Entry<String, Object> stringObjectEntry : rsObj) {
+//      System.out.println(stringObjectEntry.getKey()+", " + stringObjectEntry.getValue());
+//    }
+    String jsonTpl = rsObj.toString();
+
     return this;
+  }
+  public void parseJson(String jsonStr, Map<String, String> tplMapEntry, int start){
+    if (jsonStr.indexOf("${", start)!=-1) {
+      String preFix = jsonStr.substring(start, jsonStr.indexOf("${", start));
+      start = jsonStr.indexOf("${", start);
+      int end = jsonStr.indexOf("}$", start);
+      String tplKey = jsonStr.substring(start+2, end);
+      tplMapEntry.put(tplKey, preFix);
+      System.out.println(tplKey + ", " + preFix);
+      this.parseJson(jsonStr, tplMapEntry, end+2);
+    }
   }
   public Future<Object> execute(){
     Promise promise = Promise.promise();
@@ -67,8 +92,8 @@ public class MySQLHelper {
       conn.preparedQuery(this.blockingSQL)
         .execute(this.blockingTuple)
         .onSuccess(rs->{
-        promise.complete(rs);
-      });
+          promise.complete(rs);
+        });
     });
     return promise.future();
   }
@@ -100,21 +125,20 @@ public class MySQLHelper {
             }
           });
       });
-      }
+    }
     return promise.future();
   }
-
 }
 /*
-* future = sqlHelper.query(sql).
-* bindParams(fieldsList)
-* .excute()
-* .query(sql).bindParams().map(templateId)
-* //future.get()
-* int i = 0;
-* future.onSucess(result->{
-*     i = result;
-*      do(i)
-* })
-* do(i)
-* */
+ * future = sqlHelper.query(sql).
+ * bindParams(fieldsList)
+ * .excute()
+ * .query(sql).bindParams().map(templateId)
+ * //future.get()
+ * int i = 0;
+ * future.onSucess(result->{
+ *     i = result;
+ *      do(i)
+ * })
+ * do=i=>{}
+ * */
