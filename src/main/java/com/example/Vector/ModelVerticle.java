@@ -5,6 +5,8 @@ import com.to.core.base.Vector;
 import com.to.core.utils.DataAdapter;
 import com.to.core.lib.MySQLHelper;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.redis.client.RedisAPI;
@@ -15,6 +17,7 @@ import io.vertx.sqlclient.Tuple;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 
 public class ModelVerticle extends Vector {
@@ -24,7 +27,6 @@ public class ModelVerticle extends Vector {
   public void ModelAdd(RoutingContext ctx){
     //模型入库
     //数据库操作
-
     this.getRedis().connect().onSuccess(conn -> {
       RedisAPI.api(conn).get("author").onSuccess(val -> {
         this.retResponse(ctx, val.toString());
@@ -167,11 +169,27 @@ public class ModelVerticle extends Vector {
     });
     ctx.json(ret);
   }
-
+//数据协议测试
   @Post(path="/dataAdapter/MapTask")
-  public void genMap(RoutingContext ctx, @FromJsonParams String protocolName, @FromJsonParams JsonObject protocol){
+  public void genMap(RoutingContext ctx, @FromJsonParams String document, @FromJsonParams JsonObject protocol){
     DataAdapter adapter = new DataAdapter(this);
-    String result = adapter.genMapping(protocolName, protocol);
+    String result = adapter.genMapping(document, protocol);
     ctx.json(new JsonObject().put("result", result));
+  }
+  @Post(path="/Rds/promise")
+  public void promiseTest(RoutingContext ctx, @FromJsonParams String document){
+    Promise p = Promise.promise();
+    this.getRedis().connect().onSuccess(conn->{
+      RedisAPI.api(conn).get(document).onSuccess(res->{
+        System.out.println(res);
+        p.complete(res);
+        conn.close();
+      }).onFailure(err->{
+        conn.close();
+      });
+    });
+    p.future().onSuccess(res->{
+      ctx.json(new JsonObject().put("result", res.toString()));
+    });
   }
 }
