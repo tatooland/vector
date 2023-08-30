@@ -1,8 +1,8 @@
 package com.to.core.base;
 
-import com.example.config.RedisConfig;
 import com.to.core.ann.*;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.mysqlclient.MySQLConnectOptions;
@@ -10,6 +10,8 @@ import io.vertx.mysqlclient.MySQLPool;
 import io.vertx.redis.client.Redis;
 import io.vertx.redis.client.RedisOptions;
 import io.vertx.sqlclient.PoolOptions;
+
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -57,33 +59,37 @@ public class Vector extends AbstractVerticle {
           if(ctx.request().getHeader("Content-Type").equals("application/json")) {
             ctx.request().bodyHandler(bodyHandler-> {
               ArrayList<Object> argList = new ArrayList<>();
+
+//              JsonArray argList = new JsonArray();
+//              Array argList = new Array();
               argList.add(ctx);
               JsonObject jsObj = bodyHandler.toJsonObject();
               for (Parameter parameter : method.getParameters()) {
                 if (parameter.isAnnotationPresent(FromJsonParams.class)) {
                   String key = parameter.getName();
                   switch (parameter.getType().getName()) {
-                    case "int": {
+                    case "java.lang.int": {
                       argList.add(jsObj.getInteger(key));
                     }
                     break;
-                    case "String": {
+                    case "java.lang.String": {
                       argList.add(jsObj.getString(key));
                     }
                     break;
-                    case "long": {
+                    case "java.lang.long": {
                       argList.add(jsObj.getLong(key));
                     }
                     break;
-                    case "boolean": {
+                    case "java.lang.boolean": {
                       argList.add(jsObj.getBoolean(key));
                     }
                     break;
-                    case "JsonObject": {
+                    case "io.vertx.core.json.JsonObject": {
+                      System.out.println(jsObj.getJsonObject(key).toString());
                       argList.add(jsObj.getJsonObject(key));
                     }
                     break;
-                    case "JsonArray":{
+                    case "io.vertx.core.json.JsonArray":{
                       argList.add(jsObj.getJsonArray(key));
                     }break;
                     default:
