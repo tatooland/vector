@@ -3,10 +3,10 @@
 image:https://img.shields.io/badge/vert.x-4.4.4-purple.svg[link="https://vertx.io"]
 
 基于vertx4.4的nio开发框架
-提供类似spring的注解类
-提供数据适配器引擎
-基于vertx重构了启动过程
+
 
 == Help
 
-
+提供类似spring的注解类
+提供数据适配器引擎
+基于vertx重构了启动过程
