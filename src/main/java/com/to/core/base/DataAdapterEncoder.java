@@ -27,9 +27,10 @@ public class DataAdapterEncoder {
       tplMapEntry.put("vector_framework_data_type", "multiple");
       //多例模式下需要报错起始修饰串和终止修饰串
       int beginIndex = protocolStr.indexOf("[{");
-      int endIndex = protocolStr.indexOf("}]");
+      int endIndex = protocolStr.indexOf("]");
       tplMapEntry.put("vector_framework_multiple_start", protocolStr.substring(0,beginIndex+1));
       tplMapEntry.put("vector_framework_multiple_end", protocolStr.substring(endIndex, protocolStr.length()));
+      tplMapEntry.put("vector_framework_multiple_unit_end", "}");
       //将起始修饰串和终止修饰串从协议模板中剔除
       protocolStr = protocolStr.substring(beginIndex+1, endIndex);
     }else{

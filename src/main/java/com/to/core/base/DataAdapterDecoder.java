@@ -1,11 +1,17 @@
 package com.to.core.base;
 
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowIterator;
+import io.vertx.sqlclient.RowSet;
+
 import java.util.Map;
+import java.util.Set;
 
 public class DataAdapterDecoder {
   private String type = null;
   private String multipleStart = null;
   private String multipleEnd = null;
+  private String multipleUnitEnd = null;
   private String singleEnd = null;
   private Map<String, String> tplMapEntry = null;
   public DataAdapterDecoder setMapping(Map<String, String> tplMapEntry){
@@ -14,6 +20,7 @@ public class DataAdapterDecoder {
       case "multiple":{
         this.multipleStart = tplMapEntry.get("vector_framework_multiple_start");
         this.multipleEnd = tplMapEntry.get("vector_framework_multiple_end");
+        this.multipleUnitEnd = tplMapEntry.get("vector_framework_multiple_unit_end");
       }break;
       case "single": {
         this.singleEnd = tplMapEntry.get("vector_framework_single_end");
@@ -23,13 +30,28 @@ public class DataAdapterDecoder {
     return this;
   }
   //将映射模板转换为数据实体
-  public Object decode(String ...fields){
+  public Object decode(RowSet<Row> rs){
     String result = "";
-    for (String field : fields) {
-      result += tplMapEntry.get(field) + field;
+    Set<String> keys = tplMapEntry.keySet();
+    if(type.equals("single")){
+      for(Row row : rs){
+        for (String key : keys) {
+          result += tplMapEntry.get(key) + row.getString(key) +",";
+        }
+        result = result.substring(result.length()-1);
+      }
+      result += singleEnd;
     }
-    if(type.equals("single")){result += singleEnd;}
-    if(type.equals("multiple")){result = multipleStart + result + multipleEnd;}
+    if(type.equals("multiple")){
+      for(Row row : rs){
+        for (String key : keys) {
+          result += tplMapEntry.get(key) + row.getString(key) +",";
+        }
+        result = result.substring(result.length()-1) + multipleUnitEnd+ ",";
+      }
+      result = result.substring(result.length()-1);
+      result = multipleStart + result + multipleEnd;
+    }
     return result;
   }
 }
