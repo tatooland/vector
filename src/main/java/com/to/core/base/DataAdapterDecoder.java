@@ -51,7 +51,7 @@ public class DataAdapterDecoder {
             key.equals("vector_framework_multiple_end") ||
             key.equals("vector_framework_multiple_unit_end")
           ){}else{
-            result += tplMapEntry.get(key) + row.getString(key) + ",";
+            result += tplMapEntry.get(key) + row.getString(key);
           }
         }
         result = result.substring(0,result.length()-1) + multipleUnitEnd+ ",";
