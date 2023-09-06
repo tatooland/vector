@@ -189,8 +189,9 @@ public class Vector extends AbstractVerticle {
     MySQLConnectOptions connectOptions = new MySQLConnectOptions()
       .setHost("localhost")
       .setPort(3306)
-      .setDatabase("zoo")
-      .setPassword("()<>JK2019T^^km");
+      .setDatabase("mydb")
+      .setUser("root")
+      .setPassword("");
     PoolOptions poolOptions = new PoolOptions().setMaxSize(2);
     this.mysqlLocalPool = MySQLPool.pool(vertx, connectOptions, poolOptions);
   }

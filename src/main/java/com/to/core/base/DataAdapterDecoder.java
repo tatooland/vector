@@ -31,6 +31,7 @@ public class DataAdapterDecoder {
   }
   //将映射模板转换为数据实体
   public Object decode(RowSet<Row> rs){
+    long startTime=System.currentTimeMillis();
     String result = "";
     Set<String> keys = tplMapEntry.keySet();
     if(type.equals("single")){
@@ -45,13 +46,21 @@ public class DataAdapterDecoder {
     if(type.equals("multiple")){
       for(Row row : rs){
         for (String key : keys) {
-          result += tplMapEntry.get(key) + row.getString(key) +",";
+          if(key.equals("vector_framework_data_type") ||
+            key.equals("vector_framework_multiple_start") ||
+            key.equals("vector_framework_multiple_end") ||
+            key.equals("vector_framework_multiple_unit_end")
+          ){}else{
+            result += tplMapEntry.get(key) + row.getString(key) + ",";
+          }
         }
-        result = result.substring(result.length()-1) + multipleUnitEnd+ ",";
+        result = result.substring(0,result.length()-1) + multipleUnitEnd+ ",";
       }
-      result = result.substring(result.length()-1);
+      result = result.substring(0,result.length()-1);
       result = multipleStart + result + multipleEnd;
     }
+    long endTime = System.currentTimeMillis();
+    System.out.println("解码运行时间：" + (endTime-startTime) + "ms");
     return result;
   }
 }
