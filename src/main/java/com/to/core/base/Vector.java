@@ -2,20 +2,21 @@ package com.to.core.base;
 
 import com.to.core.ann.*;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.json.JsonArray;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.mysqlclient.MySQLPool;
 import io.vertx.redis.client.Redis;
 import io.vertx.redis.client.RedisOptions;
 import io.vertx.sqlclient.PoolOptions;
-
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class Vector extends AbstractVerticle {
@@ -24,6 +25,8 @@ public class Vector extends AbstractVerticle {
   private boolean useLocalMySQLConnection = false;
   private boolean useGlobalRedisConnection = false;
   private boolean useLocalRedisConnection = false;
+
+  private boolean allowCORS  = false;
 
   protected MySQLPool mysqlLocalPool = null;
 
@@ -37,6 +40,24 @@ public class Vector extends AbstractVerticle {
   public void  start() {
     //provide router for http path registing
     Router router = Router.router(vertx);
+//    //设置CORS
+//    Set<String> allowHeaders = new HashSet<>();
+//    allowHeaders.add("x-requested-with");
+//    allowHeaders.add("Access-Control-Allow-Origin");
+//    allowHeaders.add("origin");
+//    allowHeaders.add("Content-Type");
+//    allowHeaders.add("accept");
+//    Set<HttpMethod> allowMethods = new HashSet<>();
+//    allowMethods.add(HttpMethod.GET);
+//    allowMethods.add(HttpMethod.PUT);
+//    allowMethods.add(HttpMethod.OPTIONS);
+//    allowMethods.add(HttpMethod.POST);
+//    allowMethods.add(HttpMethod.DELETE);
+//    allowMethods.add(HttpMethod.PATCH);
+//
+//    router.route().handler(CorsHandler.create("*")
+//      .allowedHeaders(allowHeaders)
+//      .allowedMethods(allowMethods));
     //遍历具备http注解的方法,并获取参数
     for (Method method : this.getClass().getMethods()) {
       if(method.isAnnotationPresent(Get.class)){//获取进行了http Get请求声明的子类成员方法
@@ -59,9 +80,6 @@ public class Vector extends AbstractVerticle {
           if(ctx.request().getHeader("Content-Type").equals("application/json")) {
             ctx.request().bodyHandler(bodyHandler-> {
               ArrayList<Object> argList = new ArrayList<>();
-
-//              JsonArray argList = new JsonArray();
-//              Array argList = new Array();
               argList.add(ctx);
               JsonObject jsObj = bodyHandler.toJsonObject();
               for (Parameter parameter : method.getParameters()) {
@@ -119,9 +137,12 @@ public class Vector extends AbstractVerticle {
         this.useGlobalRedisConnection = vc.shareRedisPool();
         this.useLocalMySQLConnection = vc.independentMySqlPool();
         this.useLocalRedisConnection = vc.independentRedisPool();
+        this.allowCORS = vc.allowCORS();
+        if(this.allowCORS){
+          this.CORS(router);
+        }
       }
     }
-
     //http服务器启动
     Method[] methods = this.getClass().getDeclaredMethods();
     vertx.createHttpServer().requestHandler(router).listen(this.port);
@@ -161,6 +182,27 @@ public class Vector extends AbstractVerticle {
     }
   }
 
+  protected void CORS(Router router){
+    //设置CORS
+    Set<String> allowHeaders = new HashSet<>();
+    allowHeaders.add("x-requested-with");
+    allowHeaders.add("Access-Control-Allow-Origin");
+    allowHeaders.add("origin");
+    allowHeaders.add("Content-Type");
+    allowHeaders.add("accept");
+    Set<HttpMethod> allowMethods = new HashSet<>();
+    allowMethods.add(HttpMethod.GET);
+    allowMethods.add(HttpMethod.PUT);
+    allowMethods.add(HttpMethod.OPTIONS);
+    allowMethods.add(HttpMethod.POST);
+    allowMethods.add(HttpMethod.DELETE);
+    allowMethods.add(HttpMethod.PATCH);
+
+    router.route().handler(CorsHandler.create("*")
+      .allowedHeaders(allowHeaders)
+      .allowedMethods(allowMethods));
+  }
+
 //部署共享mysql连接池
   protected void deployGlobalMySQLPool() {
     if(vertx.sharedData().getLocalMap("vector-pool").get("vector-mysql-pool")==null){//判断共享连接池是否存在,不存在则创建
@@ -189,9 +231,9 @@ public class Vector extends AbstractVerticle {
     MySQLConnectOptions connectOptions = new MySQLConnectOptions()
       .setHost("localhost")
       .setPort(3306)
-      .setDatabase("mydb")
+      .setDatabase("etl_temp")
       .setUser("root")
-      .setPassword("");
+      .setPassword("()<>JK2019T^^km");
     PoolOptions poolOptions = new PoolOptions().setMaxSize(2);
     this.mysqlLocalPool = MySQLPool.pool(vertx, connectOptions, poolOptions);
   }

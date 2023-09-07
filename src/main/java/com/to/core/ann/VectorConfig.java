@@ -1,6 +1,6 @@
 package com.to.core.ann;
 
-import com.example.config.RedisConfig;
+
 
 import java.lang.annotation.*;
 
@@ -13,5 +13,6 @@ public @interface VectorConfig {
   public boolean shareRedisPool() default false;
 
   public boolean independentRedisPool() default false;
+  public boolean allowCORS() default false;
   public int port() default -1;
 }
