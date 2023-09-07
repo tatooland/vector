@@ -40,26 +40,9 @@ public class Vector extends AbstractVerticle {
   public void  start() {
     //provide router for http path registing
     Router router = Router.router(vertx);
-//    //设置CORS
-//    Set<String> allowHeaders = new HashSet<>();
-//    allowHeaders.add("x-requested-with");
-//    allowHeaders.add("Access-Control-Allow-Origin");
-//    allowHeaders.add("origin");
-//    allowHeaders.add("Content-Type");
-//    allowHeaders.add("accept");
-//    Set<HttpMethod> allowMethods = new HashSet<>();
-//    allowMethods.add(HttpMethod.GET);
-//    allowMethods.add(HttpMethod.PUT);
-//    allowMethods.add(HttpMethod.OPTIONS);
-//    allowMethods.add(HttpMethod.POST);
-//    allowMethods.add(HttpMethod.DELETE);
-//    allowMethods.add(HttpMethod.PATCH);
-//
-//    router.route().handler(CorsHandler.create("*")
-//      .allowedHeaders(allowHeaders)
-//      .allowedMethods(allowMethods));
     //遍历具备http注解的方法,并获取参数
     for (Method method : this.getClass().getMethods()) {
+      System.out.println(method.getName());
       if(method.isAnnotationPresent(Get.class)){//获取进行了http Get请求声明的子类成员方法
         Get methodAnn = method.getAnnotation(Get.class);
         String path = methodAnn.path();
