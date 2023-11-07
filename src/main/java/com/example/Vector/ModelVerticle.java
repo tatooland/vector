@@ -1,33 +1,26 @@
 package com.example.Vector;
-import com.fasterxml.jackson.core.JsonEncoding;
 import com.to.core.ann.*;
+import com.to.core.base.ast.ASTAdapter;
 import com.to.core.base.DataAdapterEncoder;
 import com.to.core.base.Vector;
 import com.to.core.utils.DataAdapter;
 import com.to.core.lib.MySQLHelper;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.redis.client.RedisAPI;
 import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.RowIterator;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+
 
 
 public class ModelVerticle extends Vector {
-  @VectorConfig(independentRedisPool = true, independentMySqlPool = true, shareRedisPool = false, shareMySqlPool = false, port = 7777)
-  public void init() {
-  }
+  @VectorConfig(allowCORS = true, independentRedisPool = true, independentMySqlPool = true, shareRedisPool = false, shareMySqlPool = false, port = 7777)
+  public void init() {}
 
   @Get(path = "/test1")
   public void ModelAdd(RoutingContext ctx) {
@@ -83,8 +76,8 @@ public class ModelVerticle extends Vector {
   }
 
   @Post(path = "/user/jsObj")
-  public void JsObjTest(RoutingContext ctx, @JsonParam JsonObject obj) {
-    ctx.json(obj);
+  public void JsObjTest(RoutingContext ctx, @FromJsonParams JsonObject numb) {
+    ctx.json(numb);
   }
 
   @Post(path = "/tt1")
@@ -246,7 +239,6 @@ public class ModelVerticle extends Vector {
   @Post(path="/szj/test")
   public void szjTest(RoutingContext ctx, @FromJsonParams String dt, @FromJsonParams String document){
     String sql = "select \n" +
-      "time_cd,        #报表统计日\n" +
       "lant_name,      #分公司名称\n" +
       "lst_week_total, #上周双智家\n" +
       "lst_week_add,   #上周增量双智家\n" +
@@ -262,6 +254,73 @@ public class ModelVerticle extends Vector {
     result.onSuccess(Rs->{
       ctx.json(new JsonObject().put("result", new JsonObject(Rs.toString())));
     });
+  }
+
+  @Post(path="/rhfzl/table")
+  public void rhfzl(RoutingContext ctx, @FromJsonParams String dt, String document){
+    String sql = "select (case when aa.offer_name is null then bb.offer_name else aa.offer_name end) 融合套餐,\n" +
+      "ifnull(aa.合计,'0') 本周合计,ifnull(bb.合计,'0') 上周合计, round((aa.合计/bb.合计-1)*100,2) \"本周环比(%)\",\n" +
+      "ifnull(aa.城市,'0') 本周城市,ifnull(bb.城市,'0') 上周城市,round((aa.城市/bb.城市-1)*100,2) \"本周城市环比(%)\",\n" +
+      "ifnull(aa.农村,'0') 本周农村,ifnull(bb.农村,'0') 上周农村,round((aa.农村/bb.农村-1)*100,2)  \"本周农村环比(%)\",\n" +
+      "ifnull(aa.商圈,'0') 本周商圈,ifnull(bb.商圈,'0') 上周商圈,round((aa.商圈/bb.商圈-1)*100,2)  \"本周商圈环比(%)\",\n" +
+      "ifnull(aa.直营,'0') 本周直营,ifnull(bb.直营,'0') 上周直营,round((aa.直营/bb.直营-1)*100,2)  \"本周直营环比(%)\"\n" +
+      " from \n" +
+      "-- 本周发展\n" +
+      "(select apd.offer_name,count(apd.prod_inst_id) 合计,\n" +
+      "apd.offer_id,\n" +
+      "sum(case apd.area_type when '城市' then 1 else 0 end) 城市,\n" +
+      "sum(case apd.area_type when '农村' then 1 else 0 end) 农村,\n" +
+      "sum(case apd.area_type when '商圈' then 1 else 0 end) 商圈,\n" +
+      "sum(case apd.area_type when '直营厅' then 1 else 0 end) 直营\n" +
+      " from iwc_exp_app_pro_spring_deve_d  apd where apd.product_type='KD'\n" +
+      "and apd.day_id>=date_format(date_add('20230821',INTERVAL -7 DAY),'%Y%m%d') \n" +
+      "and apd.day_id<=date_format(date_add('20230821',INTERVAL -1 DAY),'%Y%m%d')\n" +
+      "-- 剔除校园宽带\n" +
+      "and apd.product_id not in ('6610230000','6600119000')\n" +
+      "-- 剔除单宽\n" +
+      "and apd.is_rh_flag='融合'\n" +
+      "-- 渠道类型\n" +
+      "and apd.area_type in ('城市','农村','直营厅','商圈')\n" +
+      "group by apd.offer_name,apd.offer_id) aa right join \n" +
+      "-- 上周发展\n" +
+      "(select apd.offer_name,count(apd.prod_inst_id) 合计,\n" +
+      "apd.offer_id,\n" +
+      "sum(case apd.area_type when '城市' then 1 else 0 end) 城市,\n" +
+      "sum(case apd.area_type when '农村' then 1 else 0 end) 农村,\n" +
+      "sum(case apd.area_type when '商圈' then 1 else 0 end) 商圈,\n" +
+      "sum(case apd.area_type when '直营厅' then 1 else 0 end) 直营\n" +
+      " from iwc_exp_app_pro_spring_deve_d  apd where apd.product_type='KD'\n" +
+      "and apd.day_id>=date_format(date_add('?',INTERVAL -14 DAY),'%Y%m%d') \n" +
+      "and apd.day_id<=date_format(date_add('?',INTERVAL -8 DAY),'%Y%m%d')\n" +
+      "-- 剔除校园宽带\n" +
+      "and apd.product_id not in ('6610230000','6600119000')\n" +
+      "-- 剔除单宽\n" +
+      "and apd.is_rh_flag='融合'\n" +
+      "-- 渠道类型\n" +
+      "and apd.area_type in ('城市','农村','直营厅','商圈')\n" +
+      "group by apd.offer_name,apd.offer_id) bb\n" +
+      "on aa.offer_id=bb.offer_id\n" +
+      "order by aa.合计 desc;";
+    MySQLHelper msh = new MySQLHelper(this);
+    Future<String> result = msh.RawSQLExecute(sql, Tuple.of(dt), document);
+    result.onSuccess(Rs->{
+      ctx.json(new JsonObject().put("result", new JsonObject(Rs.toString())));
+    });
+  }
+  @Post(path="/jsq")
+  public void jsonQuery(RoutingContext ctx, @FromJsonParams String qStmt){
+    long startTime=System.currentTimeMillis();
+    System.out.println(qStmt);
+    ASTAdapter ast = new ASTAdapter();
+    ast.parse(qStmt);
+    long endTime = System.currentTimeMillis();
+    System.out.println("ast解析时间" +
+      "：" + (endTime-startTime) + "ms");
+    ctx.json(qStmt);
+  }
+  @Post(path="/wangchaoceshi")
+  public void J(RoutingContext ctx, @FromJsonParams String hello){
+    ctx.json(hello);
   }
 }
 

@@ -11,6 +11,7 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -253,6 +254,26 @@ public class MySQLHelper {
         });
       });
     }
+    return promise.future();
+  }
+  public Future<String> simpleQuery(JsonObject jsonObject){
+    Promise promise = Promise.promise();
+    ArrayList<String> keys = new ArrayList<>();
+    String table = jsonObject.getString("table");
+    String op = jsonObject.getString("op");
+    String condition = jsonObject.getString("condition");
+    jsonObject.getMap().forEach((k,v)->{
+      if(!k.equals("table") && !k.equals("op") && !k.equals("condition")) {
+        keys.add(k);
+      }
+    });
+    String sql = "";
+    for (String key : keys) {
+
+    }
+//    this.pool.getConnection().compose(conn->{
+//
+//    });
     return promise.future();
   }
 }

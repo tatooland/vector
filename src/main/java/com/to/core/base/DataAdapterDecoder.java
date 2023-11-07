@@ -1,9 +1,11 @@
 package com.to.core.base;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowIterator;
 import io.vertx.sqlclient.RowSet;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,6 +63,35 @@ public class DataAdapterDecoder {
     }
     long endTime = System.currentTimeMillis();
     System.out.println("解码运行时间：" + (endTime-startTime) + "ms");
+    return result;
+  }
+
+  public Object simpleDecode(RowSet<Row> rs, JsonObject jsObject){
+    String result = "'result':[";
+    ArrayList<String> keys = new ArrayList<>();
+    jsObject.getMap().forEach((k, v)->{
+      keys.add(k);
+    });
+    for (Row r : rs) {
+      result += "{";
+      for (String key : keys) {
+            result += r.getString(key) + ",";
+      }
+      result = result.substring(0, result.length()-1)+"},";
+    }
+    result = result.substring(0, result.length()-1) + "]";
+    return result;
+  }
+  public Object simpleDecode(RowSet<Row> rs, ArrayList<String> keys){
+    String result = "'result':[";
+    for (Row r : rs) {
+      result += "{";
+      for (String key : keys) {
+        result += r.getString(key) + ",";
+      }
+      result = result.substring(0, result.length()-1)+"},";
+    }
+    result = result.substring(0, result.length()-1) + "]";
     return result;
   }
 }
