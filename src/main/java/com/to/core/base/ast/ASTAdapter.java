@@ -116,6 +116,10 @@ public class ASTAdapter {
   private String lastState = "NULL";
   private ASTElement lastNode = null;
   protected void iterateAST(ASTElement node){
+    lastState = arrow_state;
+    if(node != null){
+      System.out.println(node.getRole() + ", " + node.getToken() + ", " + arrow_state);
+    }
     if(arrow_state == "process"){
       //table:
       if(node instanceof ASTTableNode){
@@ -134,29 +138,50 @@ public class ASTAdapter {
       //table:
       if(node instanceof ASTTableNode){
         if(node.getElder()==null && node.getYounger() == null && node.getParent() == null) {
-        }else if(node.getElder() != null){
+        }else if(node.getElder() != null && node.getYounger()==null){
           arrow_state = "return";
           this.iterateAST(node.getElder());
         }else if(node.getYounger() != null){
-          arrow_state = "process";
-          this.iterateAST(node.getYounger());
-        }else if(node.getParent() != null){
+          if(((ASTTableNode) node).gateState()) {
+            arrow_state = "process";
+            ((ASTTableNode) node).close();
+            this.iterateAST(node.getYounger());
+          }else{
+            arrow_state = "return";
+            this.iterateAST(node.getElder());
+          }
+        }
+        /*else if(node.getElder() != null){
           arrow_state = "return";
+          this.iterateAST(node.getElder());
+        }*/else if(node.getParent() != null){
+          arrow_state = "return";////
           this.iterateAST(node.getParent());
         }
       }
       //field:
       if(node instanceof ASTFieldNode){
         if(((ASTFieldNode) node).getPtable() != null){
+          arrow_state = "return";////
           this.iterateAST(((ASTFieldNode) node).getPtable());
         }else{
           this.iterateAST(node.getElder());
         }
       }
-
       if(node instanceof ASTRootNode){
         //complete 结束递归
         System.out.println("return root node!");
+      }
+    }else if (arrow_state == "return_up"){
+      if(node instanceof ASTTableNode){
+        if(node.getYounger()!= null){
+          arrow_state = "process";
+          this.iterateAST(node.getYounger());
+        }
+      }
+
+      if(node instanceof ASTFieldNode){
+
       }
 
     }
