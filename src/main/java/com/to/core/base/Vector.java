@@ -128,7 +128,6 @@ public class Vector extends AbstractVerticle {
     //http服务器启动
     Method[] methods = this.getClass().getDeclaredMethods();
     vertx.createHttpServer().requestHandler(router).listen(this.port);
-    System.out.println(this.port);
 
     //MySQL数据库连接池初始化
     if(this.useGlobalMySQLConnection){
