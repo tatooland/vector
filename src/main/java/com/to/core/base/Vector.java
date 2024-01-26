@@ -128,7 +128,7 @@ public class Vector extends AbstractVerticle {
     //http服务器启动
     Method[] methods = this.getClass().getDeclaredMethods();
     vertx.createHttpServer().requestHandler(router).listen(this.port);
-
+    System.out.println(this.port);
 
     //MySQL数据库连接池初始化
     if(this.useGlobalMySQLConnection){
@@ -213,10 +213,17 @@ public class Vector extends AbstractVerticle {
     MySQLConnectOptions connectOptions = new MySQLConnectOptions()
       .setHost("localhost")
       .setPort(3306)
-      .setDatabase("etl_temp")
+      .setDatabase("x_wing")
       .setUser("root")
       .setPassword("()<>JK2019T^^km");
-    PoolOptions poolOptions = new PoolOptions().setMaxSize(2);
+
+//      .setHost("192.168.100.85")
+//      .setPort(3307)
+//      .setDatabase("etl_temp")
+//      .setUser("user_linrongji")
+//      .setPassword("Linrj12#$");
+
+    PoolOptions poolOptions = new PoolOptions().setMaxSize(2);//localhost:3306 x_wing root/()<>JK2019T^^km
     this.mysqlLocalPool = MySQLPool.pool(vertx, connectOptions, poolOptions);
   }
   //获取本地mysql连接池连接
