@@ -14,20 +14,22 @@ public class ASTAdapter {
   protected int pos1 = 0;//标识1
   protected int pos2 = 0;//标识2
   protected ASTStructure structure = null;
+
+  ArrayList<String> tape = new ArrayList<>();
   public ASTAdapter(){
     this.root = new ASTRootNode();//初始化根节点
     this.structure = new ASTStructure();
     this.currentNode = this.root;
   }
 
-  public void parse(String jsonQueryStmt){//
+  public ArrayList<String> parse(String jsonQueryStmt){//
     wordSlot = new ArrayList<>();
     //对报文进行清洗
     char[] charCode = jsonQueryStmt.replace(" ", "").trim().toCharArray();
     for (char c : charCode) {
         //解析出第一个元素后才可以将state_0设置为false
         int res = 0;
-        res=this.isFlag(c);
+        res = this.isFlag(c);
         structure.setStructure(res);
         if(res == 0){//未定位到结束符
           //将字符压入单词插槽
@@ -100,8 +102,7 @@ public class ASTAdapter {
 
     System.out.println("=========================iterate ast==============================");
     System.out.println(this.root.toString());
-    this.iterateAST(this.root.getChild());
-
+    return this.iterateAST(this.root.getChild());
   }
 
   private String checkNodeType(ASTElement node){
@@ -115,10 +116,13 @@ public class ASTAdapter {
   private String arrow_state = "process";
   private String lastState = "NULL";
   private ASTElement lastNode = null;
-  protected void iterateAST(ASTElement node){
+  protected ArrayList<String> iterateAST(ASTElement node){
+
     lastState = arrow_state;
     if(node != null){
       System.out.println(node.getRole() + ", " + node.getToken() + ", " + arrow_state);
+      tape.add(node.getRole() + ", " + node.getToken() + ", " + arrow_state +"\n" +
+        "");
     }
     if(arrow_state == "process"){
       //table:
@@ -185,6 +189,7 @@ public class ASTAdapter {
       }
 
     }
+    return tape;
   }
   protected int isFlag(char input){
     switch(input){

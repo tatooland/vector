@@ -59,7 +59,7 @@ public class Vector extends AbstractVerticle {
         Post methodAnn = method.getAnnotation(Post.class);
         String path = methodAnn.path();
         router.post(path).handler(ctx->{
-          if(ctx.request().getHeader("Content-Type").equals("application/json")) {
+          if(ctx.request().getHeader("Content-Type")!=null && ctx.request().getHeader("Content-Type").equals("application/json")) {
             ctx.request().bodyHandler(bodyHandler-> {
               ArrayList<Object> argList = new ArrayList<>();
               argList.add(ctx);
@@ -108,7 +108,7 @@ public class Vector extends AbstractVerticle {
                 throw new RuntimeException(e);
               }
             });
-          }else{
+          } else{
             throw new IllegalArgumentException("capture params in json request must be json format");
           }
         });

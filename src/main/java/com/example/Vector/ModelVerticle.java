@@ -1,5 +1,6 @@
 package com.example.Vector;
 import com.to.core.ann.*;
+import com.to.core.base.JSONAdapter;
 import com.to.core.base.ast.ASTAdapter;
 import com.to.core.base.DataAdapterEncoder;
 import com.to.core.base.Vector;
@@ -317,6 +318,12 @@ public class ModelVerticle extends Vector {
     System.out.println("ast解析时间" +
       "：" + (endTime-startTime) + "ms");
     ctx.json(qStmt);
+  }
+  @Post(path="/json2code")
+  public void jsonToCode(RoutingContext ctx, @FromJsonParams String jsonString){
+    JSONAdapter adapter = new JSONAdapter();
+    adapter.parse(jsonString);
+
   }
   @Post(path="/wangchaoceshi")
   public void J(RoutingContext ctx, @FromJsonParams String hello){
